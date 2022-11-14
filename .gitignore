@@ -475,3 +475,12 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# DotEnv
+.env*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*plan
