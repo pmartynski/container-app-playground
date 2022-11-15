@@ -74,29 +74,24 @@ resource "azurerm_role_assignment" "acr_pull_role_assignment" {
 }
 
 resource "azurerm_log_analytics_workspace" "law" {
-  name = var.law_name
+  name                = var.law_name
   resource_group_name = azurerm_resource_group.rg.name
-  location = var.location
+  location            = var.location
 }
 
 resource "azapi_resource" "env" {
-  type = "Microsoft.App/managedEnvironments@2022-03-01"
-  name = var.env_name
+  type      = "Microsoft.App/managedEnvironments@2022-03-01"
+  name      = var.env_name
   parent_id = azurerm_resource_group.rg.id
-  location = var.location
+  location  = var.location
 
-  # identity {
-  #   type = "UserAssigned"
-  #   identity_ids = [ azurerm_user_assigned_identity.uaid.id ]
-  # }
-  
   body = jsonencode({
     properties = {
       appLogsConfiguration = {
         destination = "log-analytics"
         logAnalyticsConfiguration = {
           customerId = azurerm_log_analytics_workspace.law.workspace_id
-          sharedKey = azurerm_log_analytics_workspace.law.primary_shared_key
+          sharedKey  = azurerm_log_analytics_workspace.law.primary_shared_key
         }
       }
     }
@@ -105,14 +100,17 @@ resource "azapi_resource" "env" {
 }
 
 output "user_assigned_identity" {
-   value = {
-    id = azurerm_user_assigned_identity.uaid.id
-    principalId = azurerm_user_assigned_identity.uaid.principal_id
-   }
+  value = azurerm_user_assigned_identity.uaid.id
 }
 
 output "asa_env" {
-  value = {
-    id = azapi_resource.env.id
-  }
+  value = azapi_resource.env.id
+}
+
+output "rg" {
+  value = azurerm_resource_group.rg.id
+}
+
+output "location" {
+  value = azurerm_resource_group.rg.location
 }
