@@ -5,7 +5,7 @@ resource "azurerm_cosmosdb_account" "main" {
 
   offer_type = "Standard"
 
-  public_network_access_enabled = true
+  public_network_access_enabled = false
   enable_automatic_failover     = false
 
   consistency_policy {
