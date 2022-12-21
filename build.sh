@@ -5,14 +5,13 @@ else
     TAG="0.1.0"
 fi
 
-ACR="pmacreus1"
+ACR="pmacreus"
 REPO="container-app-playground"
-IMG="${REPO}:${VERSION}"
+IMG="${REPO}:${TAG}"
 ACR_IMG="${ACR}.azurecr.io/${IMG}"
 
 az acr login -n $ACR
-docker buildx build --platform linux/amd64 -t $IMG ./src
-docker tag $IMG $ACR_IMG
+docker buildx build --platform linux/amd64 -t $ACR_IMG ./src
 docker push $ACR_IMG
 
 echo ""
