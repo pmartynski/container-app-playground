@@ -23,20 +23,28 @@ variable "env_name" {
 }
 
 variable "app_name" {
-  type = string
   default = "container-app-playground"
 }
 
+variable "cosmos_name" {
+  default = "container-app-playground-cosmosdb"
+}
+
 variable "my_little_secret" {
-  type = string
   default = "Super secret value!"
 }
 
 variable "open_config" {
-  type = string
   default = "Open value"
 }
 
+variable "app_port" {
+  default = 3000
+  type    = number
+}
+
 variable "image" {
-  type = string
+  // placeholder: mcr.microsoft.com/azuredocs/containerapps-helloworld:latest
+  type    = string
+  default = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
 }

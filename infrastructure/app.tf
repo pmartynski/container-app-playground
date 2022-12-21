@@ -60,13 +60,19 @@ resource "azapi_resource" "app" {
       configuration = {
         ingress = {
           external      = true
-          targetPort    = 3000
+          targetPort    = var.app_port
           allowInsecure = false
         }
-        secrets = [{
-          name  = "my-little-secret",
-          value = var.my_little_secret
-        }]
+        secrets = [
+          {
+            name  = "my-little-secret",
+            value = var.my_little_secret
+          },
+          {
+            name  = "cosmos-connection-string"
+            value = azurerm_cosmosdb_account.main.connection_strings[0]
+          }
+        ]
         activeRevisionsMode = "Single"
         registries = [{
           identity = azurerm_user_assigned_identity.app.id
@@ -76,16 +82,22 @@ resource "azapi_resource" "app" {
       managedEnvironmentId = azapi_resource.env.id
       template = {
         containers = [{
-          name = "app"
+          name  = "app"
           image = var.image
-          env = [{
-            name      = "SECRET_VALUE"
-            secretRef = "my-little-secret"
-          },
-          {
-            name = "OPEN_VALUE"
-            value = var.open_config
-          }]
+          env = [
+            {
+              name      = "SECRET_VALUE"
+              secretRef = "my-little-secret"
+            },
+            {
+              name  = "OPEN_VALUE"
+              value = var.open_config
+            },
+            {
+              name      = "COSMOS_CONNECTION_STRING"
+              secretRef = "cosmos-connection-string"
+            }
+          ]
           resources = {
             cpu    = 0.25
             memory = "0.5Gi"
