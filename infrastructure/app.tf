@@ -39,6 +39,9 @@ resource "azapi_resource" "env" {
           sharedKey  = azurerm_log_analytics_workspace.law.primary_shared_key
         }
       }
+      vnetConfiguration = {
+        infrastructureSubnetId = azurerm_subnet.env.id
+      }
     }
   })
 }

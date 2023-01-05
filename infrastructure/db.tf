@@ -5,8 +5,8 @@ resource "azurerm_cosmosdb_account" "main" {
 
   offer_type = "Standard"
 
-  public_network_access_enabled = false
   enable_automatic_failover     = false
+  is_virtual_network_filter_enabled = true
 
   consistency_policy {
     consistency_level = "Session"
@@ -17,9 +17,9 @@ resource "azurerm_cosmosdb_account" "main" {
     failover_priority = 0
   }
 
-  #   virtual_network_rule {
-  #     id = azurerm_subnet
-  #   }
+  virtual_network_rule {
+    id = azurerm_subnet.env.id
+  }
 }
 
 resource "azurerm_cosmosdb_sql_database" "app" {
