@@ -1,5 +1,6 @@
 resource "azurerm_virtual_network" "main" {
-  name                = "myvnet"
+  name                = var.vnet_name
+  count               = var.vnet_create ? 1 : 0
   resource_group_name = azurerm_resource_group.main.name
 
   location = azurerm_resource_group.main.location
@@ -8,9 +9,10 @@ resource "azurerm_virtual_network" "main" {
 }
 
 resource "azurerm_subnet" "env" {
-  name                 = "mysubnet"
+  name                 = "${var.vnet_name}_apps"
+  count                = var.vnet_create ? 1 : 0
   resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  virtual_network_name = azurerm_virtual_network.main[0].name
   address_prefixes     = ["10.0.0.0/21"]
-  service_endpoints = ["Microsoft.AzureCosmosDB"]
+  service_endpoints    = ["Microsoft.AzureCosmosDB"]
 }

@@ -10,6 +10,11 @@ variable "acr_name" {
   default = "pmacreus"
 }
 
+variable "acr_create" {
+  type    = bool
+  default = false
+}
+
 variable "identity_name" {
   default = "pmacreuspull"
 }
@@ -30,6 +35,20 @@ variable "cosmos_name" {
   default = "container-app-playground-cosmosdb"
 }
 
+variable "cosmos_create" {
+  type    = bool
+  default = false
+}
+
+variable "vnet_name" {
+  default = "container-app-playground-vnet"
+}
+
+variable "vnet_create" {
+  type       = bool
+  default = false
+}
+
 variable "my_little_secret" {
   default = "Super secret value!"
 }
@@ -39,7 +58,7 @@ variable "open_config" {
 }
 
 variable "app_port" {
-  default = 3000
+  default = 80
   type    = number
 }
 

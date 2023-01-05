@@ -1,5 +1,6 @@
 resource "azurerm_container_registry" "main" {
   name                = var.acr_name
+  count               = var.acr_create ? 1 : 0
   resource_group_name = azurerm_resource_group.main.name
   location            = var.location
   sku                 = "Basic"
@@ -13,7 +14,8 @@ resource "azurerm_user_assigned_identity" "app" {
 
 resource "azurerm_role_assignment" "acr_pull_role_assignment" {
   principal_id                     = azurerm_user_assigned_identity.app.principal_id
-  scope                            = azurerm_container_registry.main.id
+  count                            = var.acr_create ? 1 : 0
+  scope                            = azurerm_container_registry.main[0].id
   role_definition_name             = "AcrPull"
   skip_service_principal_aad_check = true
 }
@@ -40,10 +42,14 @@ resource "azapi_resource" "env" {
         }
       }
       vnetConfiguration = {
-        infrastructureSubnetId = azurerm_subnet.env.id
+        infrastructureSubnetId = var.vnet_create ? azurerm_subnet.env[0].id : null
       }
     }
   })
+}
+
+locals {
+  cdb_cs = var.cosmos_create ? azurerm_cosmosdb_account.main[0].connection_strings[0] : ""
 }
 
 resource "azapi_resource" "app" {
@@ -73,14 +79,14 @@ resource "azapi_resource" "app" {
           },
           {
             name  = "cosmos-connection-string"
-            value = azurerm_cosmosdb_account.main.connection_strings[0]
+            value = local.cdb_cs
           }
         ]
         activeRevisionsMode = "Single"
-        registries = [{
+        registries = var.acr_create ? [{
           identity = azurerm_user_assigned_identity.app.id
-          server   = azurerm_container_registry.main.login_server
-        }]
+          server   = azurerm_container_registry.main[0].login_server
+        }] : []
       }
       managedEnvironmentId = azapi_resource.env.id
       template = {
