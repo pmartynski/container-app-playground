@@ -48,6 +48,21 @@ resource "azapi_resource" "env" {
   })
 }
 
+resource "azapi_resource" "app_tls_cert" {
+  type = "Microsoft.App/managedEnvironments/certificates@2022-03-01"
+  name = var.app_custom_domain
+  location = azapi_resource.env.location
+  parent_id = azapi_resource.env.id
+
+  body = jsonencode({
+    properties = {
+      password = file(var.app_tls_cert_pass_file)
+      value = filebase64(var.app_tls_cert_file)
+    }
+  })
+}
+
+
 locals {
   cdb_cs = var.cosmos_create ? azurerm_cosmosdb_account.main[0].connection_strings[0] : ""
 }
@@ -71,6 +86,10 @@ resource "azapi_resource" "app" {
           external      = true
           targetPort    = var.app_port
           allowInsecure = false
+          customDomains = [{
+            certificateId = azapi_resource.app_tls_cert.id
+            name = azapi_resource.app_tls_cert.name
+          }]
         }
         secrets = [
           {

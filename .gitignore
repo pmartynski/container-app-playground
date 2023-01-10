@@ -485,3 +485,4 @@ $RECYCLE.BIN/
 *.tfstate.backup
 *plan
 *.tfvars
+certs/
