@@ -1,0 +1,84 @@
+trigger: none
+
+parameters:
+  - name: dnsSleep
+    default: 5
+    displayName: Wait for TXT DNS record [s]
+  - name: renewalPeriod
+    default: 2628000
+    displayName: Renewal period length [s] defaults to 30 days
+  - name: forceIssue
+    default: 'false'
+    displayName: Force certificate issue process (eg. first time for env)
+  
+variables:
+  # - group: TlsCertificates
+  - group: IssueRenewCertVars
+  - name: acme_home
+    value: "$(Build.Repository.LocalPath)/acme-home"
+  - name: vault_name
+    value: ado-tls-enroll-lib
+steps:
+  - task: AzureCLI@2
+    displayName: Check renewal period
+    name: CheckRenewalPeriod
+    inputs:
+      azureSubscription: MyMpn
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        openssl version
+        PKCS12_SECRET=`az keyvault secret show --vault-name $(vault_name) -n tls-cert-pkcs12-secret --query value -o tsv`
+        az keyvault secret show --vault-name $(vault_name) -n tls-cert-pkcs12-b64 --query value -o tsv \
+          | base64 -d \
+          > $(domain).pfx
+        echo "PKCS12 file fetched"
+        openssl pkcs12 -in $(domain).pfx -passin pass:"$PKCS12_SECRET" -passout pass:"" -clcerts -nokeys -out $(domain).pem
+        openssl x509 -in $(domain).pem -enddate -subject -noout -checkend ${{ parameters.renewalPeriod }}
+        echo "##vso[task.setvariable variable=is_in_renewal]$?"
+  - bash: echo "Is in renewal $(is_in_renewal)"
+    condition: and(succeeded(), or(eq(${{ parameters.forceIssue }}, 'true'), eq(variables['is_in_renewal'], '1')))
+    name: TEST1
+  - bash: echo "Is in renewal $(is_in_renewal)"
+    condition: and(succeeded(), not(or(eq(${{ parameters.forceIssue }}, 'true'), eq(variables['is_in_renewal'], '1'))))
+    name: TEST2
+  - bash: exit -1
+    name: BREAK
+  - bash: |
+      curl https://raw.githubusercontent.com/acmesh-official/acme.sh/master/acme.sh > acme.sh
+      chmod +x acme.sh
+      echo "$(account_name)"
+      ./acme.sh --install-online --home $(acme_home) --no-cron --email "$(account_name)" --no-color
+    name: InstallAcmeSh
+    displayName: "Install acme.sh"
+
+  - bash: |
+      ./acme.sh --issue --domain $(domain) --no-color \
+        --dns dns_azure --server letsencrypt --home $(acme_home) \
+        --dnssleep ${{ parameters.dnsSleep }}
+      if [[ ! (-e $(acme_home)/$(domain)/$(domain).cer && -e $(acme_home)/$(domain)/$(domain).key) ]]; then
+        echo "Certificate not issued"
+        exit -1
+      fi
+    name: IssueTlsCert
+    displayName: "Issue TLS certificate"
+  - task: AzureCLI@2
+    displayName: Export certificate
+    name: ExportCertificate
+    inputs:
+      azureSubscription: MyMpn
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        PKCS12_SECRET=$(cat /dev/urandom | tr -dc 'A-Za-z0-9_!@#$%^&*()\-+=' | head -c24)
+        ./acme.sh --to-pkcs12 -d $(domain) --home $(acme_home) --password $PKCS12_SECRET
+        PKCS12_B64=`cat $(acme_home)/$(domain)/$(domain).pfx | base64 -w 0`
+        az account show --query user.name
+        az keyvault secret set --vault-name $(vault_name) -n tls-cert-pkcs12-b64 --value "$PKCS12_B64" -o none
+        if [[ $? != 0 ]]; then
+          echo "Cert file export failed"
+        fi
+        az keyvault secret set --vault-name $(vault_name) -n tls-cert-pkcs12-secret --value "$PKCS12_SECRET" -o none
+        if [[ $? != 0 ]]; then
+          echo "Cert secret export failed"
+        fi

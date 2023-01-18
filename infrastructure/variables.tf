@@ -66,12 +66,14 @@ variable "app_custom_domain" {
   default = "container-app-playground.chickenkiller.com"
 }
 
-variable "app_tls_cert_file" {
-  default = "./certs/container-app-playground.chickenkiller.com/cert.pem"
+variable "app_tls_cert" {
+  type = string
+  description = "PKCS12 base64 encoded TLS cert"
 }
 
-variable "app_tls_cert_pass_file" {
-  default = "./certs/container-app-playground.chickenkiller.com/certpass"
+variable "app_tls_cert_pass" {
+  type = string
+  description = "PKCS12 cert store password"
 }
 
 variable "image" {
