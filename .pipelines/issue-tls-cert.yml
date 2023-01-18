@@ -1,0 +1,8 @@
+trigger: none
+# schedules:
+variables:
+  - group: LetsEncryptMartynskiDev
+steps:
+  - script: curl https://get.acme.sh | sh -s email=${{ variables.acme_account }}
+    name: InstallAcmeSh
+    displayName: "Install acme.sh"
